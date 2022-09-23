@@ -11,4 +11,4 @@ app.use(authRoutes);
 app.use(cookieParser());
 
 
-app.listen(5000);
+app.listen(5000); 
