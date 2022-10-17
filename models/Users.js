@@ -4,6 +4,10 @@ const { isEmail } = require('validator');
 const bcrypt = require('bcrypt');
  
 const userSchema = new mongoose.Schema({
+    role:{
+        type: 'string',
+        required:true
+    },
     username:{
         type:'string',
         required: [true,'please enter a username'],
@@ -22,7 +26,11 @@ const userSchema = new mongoose.Schema({
         type: 'string',
         required: [true,'please enter an password'],
         minlength: [6,'please enter at least six characters of your password'],
+    },
+    isActive:{
+        type: 'boolean',
     }
+  
 })
 
 // fire a function after doc saved in db
@@ -34,12 +42,12 @@ const userSchema = new mongoose.Schema({
 // })
 
 // fire a function after doc saved in db also hashing the password
-userSchema.pre('save', async function(next){
-    // console.log('new user was created & saved',this);
-    const salt = await bcrypt.genSalt();
-    this.password = await bcrypt.hash(this.password,salt);
-    next();
-})
+// userSchema.pre('save', async function(next){
+//     // console.log('new user was created & saved',this);
+//     const salt = await bcrypt.genSalt();
+//     this.password = await bcrypt.hash(this.password,salt);
+//     next();
+// })
 
 // static method form login user
 // userSchema.statics.login =   async function(email, password){

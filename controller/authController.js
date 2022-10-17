@@ -1,8 +1,18 @@
 const User = require("../models/Users");
 const Product = require('../models/Products');
+const Category = require('../models/Category');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 
+cloudinary.config({ 
+  cloud_name: 'dpkji708g', 
+  api_key: '331419131284588', 
+  api_secret: 'eRLvlVdBy4U1iMlTOOB7ap6BXVc',
+  secure: true
+});
+ 
 //hadle errors
 
 const hadleErrors = (err) => {
@@ -40,10 +50,10 @@ module.exports.login_get = (req, res) => {
   res.send("login get request");
 };
 module.exports.signup_post = async (req, res) => {
-  const {username, email, password } = req.body;
+  const {username, email, password ,role} = req.body;
 
   try {
-    const user = await User.create({username, email, password });
+    const user = await User.create({username, email, password,role });
     const token = createToken(user._id);
     res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
     console.log(token);
@@ -105,11 +115,10 @@ module.exports.login_post = async (req, res) => {
 
        user = await User.findOne( {email } )
      }
-     console.log(user);
      
      if (user) {
-      const auth = await bcrypt.compare(password, user.password);
-      if (auth) {
+      // const auth = await bcrypt.compare(password, user.password);
+      if (password ===user.password) {
         const LoginToken =  createToken(user._id);
         // res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
         // console.log(LoginToken); 
@@ -157,8 +166,33 @@ module.exports.login_post = async (req, res) => {
 
 // Products
 
+module.exports.product_get_id = async(req,res)=>{
+  let products = await Product.find({_id:req.params.id});
+  if (products.length > 0) {
+    res.send(products);
+  } else {
+    res.send({ result: "No products found" });
+  }
+}
 module.exports.product_get = async(req,res)=>{
   let products = await Product.find();
+  if (products.length > 0) {
+    res.send(products);
+  } else {
+    res.send({ result: "No products found" });
+  }
+  // let result = await Product.find({
+  //   $or: [
+  //     { name: { $regex: req.params.key } },
+  //     { price: { $regex: req.params.key } },
+  //     { category: { $regex: req.params.key } },
+  //     { company: { $regex: req.params.key } },
+  //   ],
+  // });
+  // res.send(result);
+}
+module.exports.product_get_user = async(req,res)=>{
+  let products = await Product.find({userId:req.params.id});
   if (products.length > 0) {
     res.send(products);
   } else {
@@ -167,6 +201,18 @@ module.exports.product_get = async(req,res)=>{
 }
 
 module.exports.product_post = async(req,res)=>{
+  const file = req.files.image ;
+  cloudinary.uploader.upload(file.tempFilePath,async(err,result)=>{
+    if(result){
+
+      const data = {...req.body , image:result.url}
+      let product = new Product(data);
+      let result1 = await product.save();
+      res.send(result1);
+    }else{
+      res.send({ result: "image can not be uploaded" });
+    }
+  });
   let product = new Product(req.body);
   let result = await product.save();
   res.send(result);
@@ -185,4 +231,40 @@ module.exports.product_put = async(req,res)=>{
     }
   );
   res.send(result);
+}
+
+
+module.exports.user_get = async(req,res)=>{
+  let user = await User.find({role:'user'});
+  if(user){
+    res.send(user);
+  }
+  else{
+    res.send({result:'User not found'});
+  }
+}
+
+
+module.exports.user_put = async(req,res)=>{
+  try{
+
+    let result = await User.updateOne(
+      { _id: req.params.id },
+      {
+        $set: req.body  ,
+      }
+      );
+      res.send(result);
+    }catch(err){
+      res.send(err);
+    }
+}
+
+module.exports.category = async(req,res)=>{
+  let category = await Category.find();
+  if (category.length > 0) {
+    res.send(category);
+  } else {
+    res.send({ result: "No products found" });
+  }
 }
